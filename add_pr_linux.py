@@ -9,15 +9,15 @@ def add_pr_info_statement(file_path):
         lines = file.readlines()
 
     new_lines = []
-    function_regex = re.compile(r'^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{')
+    function_regex = re.compile(r'\bstatic\s+[\w\s*]+\s+(\w+)\s*\([^)]*\)\s*{')
+
     call_chain_declared = False
 
     for line in lines:
         new_lines.append(line)
-        match = function_regex.match(line)
+        match = function_regex.search(line)
         if match:
-            return_type = match.group(1)
-            function_name = match.group(2)
+            function_name = match.group(1)
             indent = re.match(r'\s*', line).group()
 
             if not call_chain_declared:
@@ -34,7 +34,7 @@ def add_pr_info_statement(file_path):
 def process_folder(folder_path):
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file.endswith('.c'):
+            if file.endswith('.c') or file.endswith('.h'):
                 file_path = os.path.join(root, file)
                 add_pr_info_statement(file_path)
 
