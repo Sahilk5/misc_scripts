@@ -9,14 +9,15 @@ def add_pr_info_statement(file_path):
         lines = file.readlines()
 
     new_lines = []
-    function_regex = re.compile(r'^\s*([a-zA-Z_][a-zA-Z0-9_]*\s+)+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{')
+    function_regex = re.compile(r'^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{')
     call_chain_declared = False
 
     for line in lines:
         new_lines.append(line)
         match = function_regex.match(line)
         if match:
-            function_name = match.groups()[-1]
+            return_type = match.group(1)
+            function_name = match.group(2)
             indent = re.match(r'\s*', line).group()
 
             if not call_chain_declared:
