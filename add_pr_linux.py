@@ -14,7 +14,9 @@ def is_macro(line):
     return line.strip().startswith('#define') and line.strip().endswith('\\')
 
 def is_struct(line):
-    return 'struct' in line and line.strip().endswith('{')
+    struct_start = 'struct' in line and '{' in line
+    struct_end = line.strip().endswith('};')
+    return struct_start or struct_end
 
 def add_pr_info_to_functions(file_path):
     with open(file_path, 'r') as file:
@@ -66,7 +68,7 @@ def add_pr_info_to_functions(file_path):
                 i += 1
                 continue
 
-            # Check if the line starts a struct definition
+            # Check if the line starts or ends a struct definition
             if is_struct(line):
                 inside_struct = True
                 modified_lines.append(line)
