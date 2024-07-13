@@ -12,21 +12,38 @@ def add_pr_info_statement(file_path):
     function_regex = re.compile(r'\b(?:static|extern)?\s*[\w\s*]+\s+(\w+)\s*\([^)]*\)\s*{')
 
     call_chain_declared = False
+    inside_function = False
+    indent_level = 0
 
     for line in lines:
+        if not inside_function:
+            match = function_regex.search(line)
+            if match:
+                function_name = match.group(1)
+                indent = re.match(r'\s*', line).group()
+
+                if not call_chain_declared:
+                    new_lines.append('#include <linux/kernel.h>\n#include <linux/string.h>\n\n')
+                    new_lines.append(f'{indent}char call_chain[1024] = "";\n')
+                    call_chain_declared = True
+
+                new_lines.append(f'{line.rstrip()}\n')
+                new_lines.append(f'{indent}strcat(call_chain, "{function_name} -> ");\n')
+                new_lines.append(f'{indent}pr_info("Call chain: %s\\n", call_chain);\n')
+                inside_function = True
+                indent_level = len(indent)
+                continue
+
+        if inside_function:
+            if line.strip() == '':
+                new_lines.append(line)
+                continue
+
+            current_indent = len(re.match(r'\s*', line).group())
+            if current_indent <= indent_level:
+                inside_function = False
+
         new_lines.append(line)
-        match = function_regex.search(line)
-        if match:
-            function_name = match.group(1)
-            indent = re.match(r'\s*', line).group()
-
-            if not call_chain_declared:
-                new_lines.insert(0, '#include <linux/kernel.h>\n#include <linux/string.h>\n\n')
-                new_lines.insert(1, f'{indent}char call_chain[1024] = "";\n')
-                call_chain_declared = True
-
-            new_lines.append(f'{indent}strcat(call_chain, "{function_name} -> ");\n')
-            new_lines.append(f'{indent}pr_info("Call chain: %s\\n", call_chain);\n')
 
     with open(file_path, 'w') as file:
         file.writelines(new_lines)
