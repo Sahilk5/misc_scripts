@@ -12,7 +12,7 @@ def add_pr_info_statement(file_path):
     function_regex = re.compile(r'^\s*([a-zA-Z_][a-zA-Z0-9_]*\s+)+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{')
     call_chain_declared = False
 
-    for i, line in enumerate(lines):
+    for line in lines:
         new_lines.append(line)
         match = function_regex.match(line)
         if match:
@@ -20,8 +20,8 @@ def add_pr_info_statement(file_path):
             indent = re.match(r'\s*', line).group()
 
             if not call_chain_declared:
-                new_lines.insert(0, f'#include <linux/kernel.h>\n#include <linux/string.h>\n\n')
-                new_lines.insert(0, f'{indent}char call_chain[1024] = "";\n')
+                new_lines.insert(0, '#include <linux/kernel.h>\n#include <linux/string.h>\n\n')
+                new_lines.insert(1, f'{indent}char call_chain[1024] = "";\n')
                 call_chain_declared = True
 
             new_lines.append(f'{indent}strcat(call_chain, "{function_name} -> ");\n')
