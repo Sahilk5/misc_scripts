@@ -16,29 +16,46 @@ def add_pr_info_to_functions(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
-    # Regular expression to match the beginning of a function definition
-    function_regex = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*{')
+    # Regex patterns to identify function definitions
+    function_start_regex = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^;]*$')
+    opening_brace_regex = re.compile(r'.*\{')
+
     modified_lines = []
     inside_function = False
     function_name = None
 
-    for line in lines:
+    i = 0
+    while i < len(lines):
+        line = lines[i]
         if not inside_function:
             # Check if the line starts a function definition
-            match = function_regex.match(line)
-            if match:
-                inside_function = True
-                # Extract function name
-                function_signature = match.group(0)
-                function_name = re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*\s*\(', function_signature)[-1][:-1].strip()
-                modified_lines.append(line)
-                modified_lines.append(f'    pr_info("{function_name} called\\n");\n')
+            if function_start_regex.match(line):
+                # Continue reading until we find the opening brace '{'
+                function_signature = line
+                i += 1
+                while i < len(lines) and not opening_brace_regex.match(lines[i]):
+                    function_signature += lines[i]
+                    i += 1
+                if i < len(lines) and opening_brace_regex.match(lines[i]):
+                    function_signature += lines[i]
+                    # Extract function name from the signature
+                    function_name_match = re.search(r'([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', function_signature)
+                    if function_name_match:
+                        function_name = function_name_match.group(1)
+                        inside_function = True
+                        modified_lines.append(function_signature)
+                        modified_lines.append(f'    pr_info("{function_name} called\\n");\n')
+                    else:
+                        modified_lines.append(function_signature)
+                else:
+                    modified_lines.append(function_signature)
             else:
                 modified_lines.append(line)
         else:
             modified_lines.append(line)
             if '}' in line:
                 inside_function = False
+        i += 1
 
     with open(file_path, 'w') as file:
         file.writelines(modified_lines)
@@ -59,3 +76,4 @@ if __name__ == '__main__':
         sys.exit(1)
 
     process_directory(directory)
+
