@@ -15,7 +15,7 @@ def add_pr_info_to_functions(file_path):
         lines = file.readlines()
 
     # Regex patterns to identify function definitions
-    function_start_regex = re.compile(r'^[\w\s\*]+\s+[\w]+\s*\([^;]*$')
+    function_start_regex = re.compile(r'^[\w\s\*\(\)]+\s+\w+\s*\([^;]*$')
     opening_brace_regex = re.compile(r'^\s*\{')
 
     modified_lines = []
@@ -27,7 +27,7 @@ def add_pr_info_to_functions(file_path):
         line = lines[i]
         if not inside_function:
             # Check if the line starts a function definition
-            if function_start_regex.match(line):
+            if function_start_regex.match(line) and not re.match(r'^\s*#', line):
                 function_signature = line
                 i += 1
                 while i < len(lines) and not opening_brace_regex.match(lines[i]):
