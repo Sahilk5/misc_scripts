@@ -15,34 +15,37 @@ def add_pr_info_to_functions(file_path):
         lines = file.readlines()
 
     # Regex patterns to identify function definitions
-    function_start_regex = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*({|$)')
+    function_start_regex = re.compile(r'^\s*[\w\*]+\s+[\w\*]+\s*\([^;]*\)\s*(?:\{)?\s*$')
+    opening_brace_regex = re.compile(r'\{')
     function_name_regex = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(')
-    opening_brace_regex = re.compile(r'\s*\{')
 
     modified_lines = []
     inside_function = False
     function_name = None
+    brace_count = 0
 
     i = 0
     while i < len(lines):
         line = lines[i]
-
+        
         if not inside_function:
-            # Skip preprocessor directives
-            if line.strip().startswith('#'):
+            # Skip preprocessor directives and lines ending with semicolons
+            if line.strip().startswith('#') or line.strip().endswith(';'):
                 modified_lines.append(line)
                 i += 1
                 continue
-
+            
             # Check if the line starts a function definition
             if function_start_regex.match(line):
                 function_signature = line
+                brace_count = line.count('{') - line.count('}')
                 i += 1
-                while i < len(lines) and not opening_brace_regex.search(lines[i]):
+                while i < len(lines) and brace_count == 0:
                     function_signature += lines[i]
+                    brace_count += lines[i].count('{') - lines[i].count('}')
                     i += 1
-                if i < len(lines) and opening_brace_regex.search(lines[i]):
-                    function_signature += lines[i]
+                
+                if brace_count > 0:
                     # Extract function name from the signature
                     function_name_match = function_name_regex.search(function_signature)
                     if function_name_match:
@@ -61,8 +64,10 @@ def add_pr_info_to_functions(file_path):
                 modified_lines.append(line)
         else:
             modified_lines.append(line)
-            if '}' in line:
+            brace_count += line.count('{') - line.count('}')
+            if brace_count <= 0:
                 inside_function = False
+
         i += 1
 
     with open(file_path, 'w') as file:
