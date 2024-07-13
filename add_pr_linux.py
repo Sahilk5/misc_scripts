@@ -15,7 +15,7 @@ def add_pr_info_to_functions(file_path):
         lines = file.readlines()
 
     # Regex patterns to identify function definitions
-    function_start_regex = re.compile(r'^[\w\s\*\(\)]+\s+\w+\s*\([^;]*$')
+    function_start_regex = re.compile(r'^\s*[\w\s\*\(\)]+\s+\w+\s*\([^;]*$')
     opening_brace_regex = re.compile(r'^\s*\{')
 
     modified_lines = []
