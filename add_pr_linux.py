@@ -12,30 +12,24 @@ def add_pr_info_statement(file_path):
     function_regex = re.compile(r'\b(?:static|extern)?\s*[\w\s*]+\s+(\w+)\s*\([^)]*\)\s*{')
 
     call_chain_declared = False
-    inside_function = False
 
     for line in lines:
-        if not inside_function:
-            match = function_regex.search(line)
-            if match:
-                function_name = match.group(1)
-                indent = re.match(r'\s*', line).group()
+        match = function_regex.search(line)
+        if match:
+            function_name = match.group(1)
+            indent = re.match(r'\s*', line).group()
 
-                if not call_chain_declared:
-                    new_lines.append('#include <linux/kernel.h>\n#include <linux/string.h>\n\n')
-                    new_lines.append('char call_chain[1024] = "";\n\n')
-                    call_chain_declared = True
+            if not call_chain_declared:
+                new_lines.append('#include <linux/kernel.h>\n#include <linux/string.h>\n\n')
+                new_lines.append(f'{indent}char call_chain[1024] = "";\n\n')
+                call_chain_declared = True
 
-                new_lines.append(f'{line.rstrip()}\n')
-                new_lines.append(f'{indent}strcat(call_chain, "{function_name} -> ");\n')
-                new_lines.append(f'{indent}pr_info("Call chain: %s\\n", call_chain);\n')
-                inside_function = True
-                continue
+            new_lines.append(f'{line}')
+            new_lines.append(f'{indent}strcat(call_chain, "{function_name} -> ");\n')
+            new_lines.append(f'{indent}pr_info("Call chain: %s\\n", call_chain);\n')
 
-        if inside_function:
+        else:
             new_lines.append(line)
-            if line.strip() == '{':
-                inside_function = False
 
     with open(file_path, 'w') as file:
         file.writelines(new_lines)
