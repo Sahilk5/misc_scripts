@@ -15,8 +15,9 @@ def add_pr_info_to_functions(file_path):
         lines = file.readlines()
 
     # Regex patterns to identify function definitions
-    function_start_regex = re.compile(r'^\s*[\w\s\*\(\)]+\s+\w+\s*\([^;]*$')
+    function_start_regex = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^)]*\)\s*(?:\{|$)')
     opening_brace_regex = re.compile(r'^\s*\{')
+    closing_brace_regex = re.compile(r'^\s*\}')
 
     modified_lines = []
     inside_function = False
@@ -25,9 +26,16 @@ def add_pr_info_to_functions(file_path):
     i = 0
     while i < len(lines):
         line = lines[i]
+
         if not inside_function:
+            # Skip lines that are preprocessor directives or struct initializations
+            if line.strip().startswith('#') or line.strip().endswith(';') or '{' in line or '}' in line:
+                modified_lines.append(line)
+                i += 1
+                continue
+
             # Check if the line starts a function definition
-            if function_start_regex.match(line) and not re.match(r'^\s*#', line):
+            if function_start_regex.match(line):
                 function_signature = line
                 i += 1
                 while i < len(lines) and not opening_brace_regex.match(lines[i]):
@@ -36,7 +44,7 @@ def add_pr_info_to_functions(file_path):
                 if i < len(lines) and opening_brace_regex.match(lines[i]):
                     function_signature += lines[i]
                     # Extract function name from the signature
-                    function_name_match = re.search(r'\b(\w+)\s*\(', function_signature)
+                    function_name_match = re.search(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', function_signature)
                     if function_name_match:
                         function_name = function_name_match.group(1)
                         if function_name not in ["if", "while", "for", "switch", "else"]:
@@ -53,7 +61,7 @@ def add_pr_info_to_functions(file_path):
                 modified_lines.append(line)
         else:
             modified_lines.append(line)
-            if '}' in line:
+            if closing_brace_regex.match(line):
                 inside_function = False
         i += 1
 
