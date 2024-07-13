@@ -10,6 +10,13 @@ def find_c_files(directory):
                 c_files.append(os.path.join(root, file))
     return c_files
 
+def is_macro(line):
+    return line.strip().startswith('#define') and line.strip().endswith('\\')
+
+def is_struct(line):
+    return (line.strip().startswith('struct') and line.strip().endswith('{')) or \
+           (line.strip().startswith(('static', 'const', 'struct')) and line.strip().endswith('};'))
+
 def add_pr_info_to_functions(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -52,14 +59,14 @@ def add_pr_info_to_functions(file_path):
                 continue
 
             # Check if the line starts a #define statement
-            if line.strip().startswith('#define') and line.strip().endswith('\\'):
+            if is_macro(line):
                 inside_define = True
                 modified_lines.append(line)
                 i += 1
                 continue
 
             # Check if the line starts a struct definition
-            if line.strip().startswith('struct') and line.strip().endswith('{'):
+            if is_struct(line):
                 inside_struct = True
                 modified_lines.append(line)
                 i += 1
