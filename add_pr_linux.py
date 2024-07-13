@@ -13,7 +13,6 @@ def add_pr_info_statement(file_path):
 
     call_chain_declared = False
     inside_function = False
-    indent_level = 0
 
     for line in lines:
         if not inside_function:
@@ -24,26 +23,19 @@ def add_pr_info_statement(file_path):
 
                 if not call_chain_declared:
                     new_lines.append('#include <linux/kernel.h>\n#include <linux/string.h>\n\n')
-                    new_lines.append(f'{indent}char call_chain[1024] = "";\n')
+                    new_lines.append('char call_chain[1024] = "";\n\n')
                     call_chain_declared = True
 
                 new_lines.append(f'{line.rstrip()}\n')
                 new_lines.append(f'{indent}strcat(call_chain, "{function_name} -> ");\n')
                 new_lines.append(f'{indent}pr_info("Call chain: %s\\n", call_chain);\n')
                 inside_function = True
-                indent_level = len(indent)
                 continue
 
         if inside_function:
-            if line.strip() == '':
-                new_lines.append(line)
-                continue
-
-            current_indent = len(re.match(r'\s*', line).group())
-            if current_indent <= indent_level:
+            new_lines.append(line)
+            if line.strip() == '{':
                 inside_function = False
-
-        new_lines.append(line)
 
     with open(file_path, 'w') as file:
         file.writelines(new_lines)
