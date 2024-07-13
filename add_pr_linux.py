@@ -14,8 +14,7 @@ def is_macro(line):
     return line.strip().startswith('#define') and line.strip().endswith('\\')
 
 def is_struct(line):
-    return (line.strip().startswith('struct') and line.strip().endswith('{')) or \
-           (line.strip().startswith(('static', 'const', 'struct')) and line.strip().endswith('};'))
+    return 'struct' in line and line.strip().endswith('{')
 
 def add_pr_info_to_functions(file_path):
     with open(file_path, 'r') as file:
@@ -36,7 +35,7 @@ def add_pr_info_to_functions(file_path):
     while i < len(lines):
         line = lines[i]
         if not inside_function:
-            # Check if inside a multi-line #define or struct
+            # Check if inside a multi-line #define
             if inside_define:
                 modified_lines.append(line)
                 if not line.strip().endswith('\\'):
@@ -44,6 +43,7 @@ def add_pr_info_to_functions(file_path):
                 i += 1
                 continue
 
+            # Check if inside a struct definition
             if inside_struct:
                 modified_lines.append(line)
                 if line.strip().endswith('};'):
@@ -51,6 +51,7 @@ def add_pr_info_to_functions(file_path):
                 i += 1
                 continue
 
+            # Check if inside an array or struct initializer
             if inside_array_or_struct:
                 modified_lines.append(line)
                 if line.strip().endswith('};'):
