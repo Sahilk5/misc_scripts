@@ -20,12 +20,43 @@ def add_pr_info_to_functions(file_path):
 
     modified_lines = []
     inside_function = False
+    inside_define = False
+    inside_struct = False
     function_name = None
 
     i = 0
     while i < len(lines):
         line = lines[i]
         if not inside_function:
+            # Check if inside a multi-line #define or struct
+            if inside_define:
+                modified_lines.append(line)
+                if line.strip().endswith('\\'):
+                    inside_define = False
+                i += 1
+                continue
+
+            if inside_struct:
+                modified_lines.append(line)
+                if line.strip().endswith('};'):
+                    inside_struct = False
+                i += 1
+                continue
+
+            # Check if the line starts a #define statement
+            if line.strip().startswith('#define') and line.strip().endswith('\\'):
+                inside_define = True
+                modified_lines.append(line)
+                i += 1
+                continue
+
+            # Check if the line starts a struct definition
+            if line.strip().startswith('struct') and line.strip().endswith('{'):
+                inside_struct = True
+                modified_lines.append(line)
+                i += 1
+                continue
+
             # Check if the line starts a function definition
             if function_start_regex.match(line) and not re.match(r'^\s*#', line):
                 function_signature = line
