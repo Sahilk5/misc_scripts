@@ -17,7 +17,7 @@ def add_pr_info_to_functions(file_path):
     # Regex patterns to identify function definitions
     function_start_regex = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^;]*\)\s*(?:\{|$)')
     function_name_regex = re.compile(r'\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(')
-    opening_brace_regex = re.compile(r'\s*\{')
+    opening_brace_regex = re.compile(r'\{')
 
     modified_lines = []
     inside_function = False
@@ -29,12 +29,12 @@ def add_pr_info_to_functions(file_path):
         line = lines[i]
         
         if not inside_function:
-            # Skip preprocessor directives and lines ending with semicolons
-            if line.strip().startswith('#') or line.strip().endswith(';'):
+            # Skip preprocessor directives, struct/array initializations, and single-line statements
+            if line.strip().startswith('#') or line.strip().endswith(';') or re.match(r'^\s*{', line):
                 modified_lines.append(line)
                 i += 1
                 continue
-            
+
             # Check if the line starts a function definition
             if function_start_regex.match(line):
                 function_signature = line
