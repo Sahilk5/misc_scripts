@@ -22,7 +22,6 @@ def add_pr_info_to_functions(file_path):
     inside_function = False
     inside_define = False
     inside_struct = False
-    function_name = None
 
     i = 0
     while i < len(lines):
@@ -31,7 +30,7 @@ def add_pr_info_to_functions(file_path):
             # Check if inside a multi-line #define or struct
             if inside_define:
                 modified_lines.append(line)
-                if line.strip().endswith('\\'):
+                if not line.strip().endswith('\\'):
                     inside_define = False
                 i += 1
                 continue
@@ -73,7 +72,7 @@ def add_pr_info_to_functions(file_path):
                         if function_name not in ["if", "while", "for", "switch", "else"]:
                             inside_function = True
                             modified_lines.append(function_signature)
-                            modified_lines.append(f'    pr_info("{function_name} called\\n");\n')
+                            modified_lines.append('    pr_info("%s called\\n", __func__);\n')
                         else:
                             modified_lines.append(function_signature)
                     else:
