@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import re
 import sys
@@ -17,8 +15,8 @@ def add_pr_info_to_functions(file_path):
         lines = file.readlines()
 
     # Regex patterns to identify function definitions
-    function_start_regex = re.compile(r'^\s*[a-zA-Z_][a-zA-Z0-9_]*\s+[a-zA-Z_][a-zA-Z0-9_]*\s*\([^;]*$')
-    opening_brace_regex = re.compile(r'.*\{')
+    function_start_regex = re.compile(r'^[\w\s\*]+\s+[\w]+\s*\([^;]*$')
+    opening_brace_regex = re.compile(r'^\s*\{')
 
     modified_lines = []
     inside_function = False
@@ -30,7 +28,6 @@ def add_pr_info_to_functions(file_path):
         if not inside_function:
             # Check if the line starts a function definition
             if function_start_regex.match(line):
-                # Continue reading until we find the opening brace '{'
                 function_signature = line
                 i += 1
                 while i < len(lines) and not opening_brace_regex.match(lines[i]):
@@ -39,12 +36,15 @@ def add_pr_info_to_functions(file_path):
                 if i < len(lines) and opening_brace_regex.match(lines[i]):
                     function_signature += lines[i]
                     # Extract function name from the signature
-                    function_name_match = re.search(r'([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', function_signature)
+                    function_name_match = re.search(r'\b(\w+)\s*\(', function_signature)
                     if function_name_match:
                         function_name = function_name_match.group(1)
-                        inside_function = True
-                        modified_lines.append(function_signature)
-                        modified_lines.append(f'    pr_info("{function_name} called\\n");\n')
+                        if function_name not in ["if", "while", "for", "switch", "else"]:
+                            inside_function = True
+                            modified_lines.append(function_signature)
+                            modified_lines.append(f'    pr_info("{function_name} called\\n");\n')
+                        else:
+                            modified_lines.append(function_signature)
                     else:
                         modified_lines.append(function_signature)
                 else:
@@ -76,4 +76,3 @@ if __name__ == '__main__':
         sys.exit(1)
 
     process_directory(directory)
-
