@@ -9,7 +9,7 @@ def add_pr_info_statement(file_path):
         lines = file.readlines()
 
     new_lines = []
-    function_regex = re.compile(r'\bstatic\s+[\w\s*]+\s+(\w+)\s*\([^)]*\)\s*{')
+    function_regex = re.compile(r'\b(?:static|extern)?\s*[\w\s*]+\s+(\w+)\s*\([^)]*\)\s*{')
 
     call_chain_declared = False
 
